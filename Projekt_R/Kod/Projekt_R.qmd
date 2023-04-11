@@ -1,0 +1,471 @@
+---
+title: "Projekt"
+author: "Anastasiia Ivashchenko"
+language: Polski.yml
+format: 
+  html:
+    warning: false
+    message: false
+    echo: false
+    self-contained: true
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(flextable)
+library(dplyr)
+library(dbplyr)
+library(kableExtra)
+library(formattable)
+library(rstatix)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+library(plotly)
+```
+
+```{r}
+url <- "https://en.wikipedia.org/wiki/List_of_largest_cities"
+page <- read_html(url)
+```
+
+```{r}
+Nazwa_miasta <- page %>% 
+  html_nodes("tbody th a") %>% 
+  html_text() %>% 
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")
+
+Nazwa_miasta<-Nazwa_miasta[-seq(1, 9, by=1)]
+Nazwa_miasta<-Nazwa_miasta[-seq(82, 99, by=1)]
+
+
+Kraj<- page %>% 
+  html_nodes("th+ td") %>% 
+  html_text() %>% 
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")
+Kraj <-Kraj[-seq(82, 93, by=1)]
+
+
+Szacunki_populacji<- page %>% 
+  html_nodes("td:nth-child(3)") %>% 
+  html_text() %>% 
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number()
+
+
+Definicja <- page %>% 
+  html_nodes("td:nth-child(4)") %>% 
+  html_text() %>% 
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t") %>% 
+  str_replace_all(" City", " city")
+Definicja[Definicja=="—"] <- NA
+
+
+Ludnosc_miasta <- page %>% 
+  html_nodes("td:nth-child(5)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+Obszar_miasta <- page %>% 
+  html_nodes("td:nth-child(6)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+Gestosc_zaludnienia_miasta <- page %>% 
+  html_nodes("td:nth-child(7)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+Ludnosc_obszaru_miejskiego <- page %>% 
+  html_nodes("td:nth-child(8)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+Obszar_obszaru_miejskiego <- page %>% 
+  html_nodes("td:nth-child(9)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+Gestosc_zaludnienia_obszaru_miejskiego <- page %>% 
+  html_nodes("td:nth-child(10)") %>% 
+  html_text() %>%
+  str_remove_all(pattern = "\\n") %>% 
+  str_remove_all(pattern = "\\t")%>% 
+  parse_number() %>% 
+  as.numeric()
+
+
+tabela <- data.frame(Nazwa_miasta, Kraj, Definicja, Ludnosc_miasta, Obszar_miasta, Gestosc_zaludnienia_miasta, Ludnosc_obszaru_miejskiego, Obszar_obszaru_miejskiego, Gestosc_zaludnienia_obszaru_miejskiego)
+
+```
+
+# Wprowadzenie
+
+## Po co jest potrzebna analiza danych?
+
+**Analiza danych jest procesem, w którym najpierw organizujemy, porządkujemy i weryfikujemy dane, tak by wyciągnąć wnioski lub uzyskać pełniejsze informacje na temat tego, co analizujemy.** W rezultacie jesteśmy w stanie podjąć przemyślaną decyzję czy wyrobić sobie opinię na dany temat. Przy wielu procesach decyzyjnych analiza danych okazuje się bardzo przydatna, a czasem jest wręcz niezbędna.
+
+![](analiaz.jpg)
+
+# Przygotowanie danych do analizy
+
+## Tabela danych
+
+W swoim projekcie będę analizowała dane z tabeli największych miast, którą można znaleźć w Wikipedii [Top największych miast świata](https://en.wikipedia.org/wiki/List_of_largest_cities)
+
+```{r}
+#| label: tbl-miasta_glowna
+#| tbl-cap: Pierwsze 20 wierszów z tabeli największych miast
+#| column: page
+tabela %>% 
+  arrange(-Ludnosc_miasta) %>% 
+  head(20) %>% 
+  flextable() %>% 
+  set_header_labels(Nazwa_miasta = "Nazwa miasta", Ludnosc_miasta = "Ludność miasta", Obszar_miasta = "Powierzchnia miasta", Gestosc_zaludnienia_miasta = "Gęstość zaludnienia miasta", Ludnosc_obszaru_miejskiego = "Ludność obszaru miejskiego", Obszar_obszaru_miejskiego = "Powierzchnia obszaru miejskiego", Gestosc_zaludnienia_obszaru_miejskiego = "Gęstość zaludnienia obszaru miejskiego")%>%  bold(j = "Ludnosc_miasta") %>%
+  autofit() 
+  
+ 
+```
+
+W tabeli (@tbl-miasta_glowna) są takie kolumny:
+
+-   **Nazwa miasta**
+
+-   **Kraj**
+
+-   **Definicja** - rodzaj miasta (stolica, gmina, gubernia miejska itd.)
+
+-   **Ludnosc miasta**
+
+-   **powierzchnia miasta**
+
+-   **Gęstość zaludnienia miasta**
+
+-   **Ludnosc obszaru miejskiego**
+
+-   **powierzchnia obszaru miejskiego**
+
+-   **Gęstość zaludnienia obszaru miejskiego**
+
+## Pobieranie danych ze strony
+
+![](unnamed.jpg)
+
+Dane pobierałam za pomocą **SelectorGadget.**
+
+Nie będę uwzględniać w swojej analizie 3 ostatnie kolumny z tabeli na stronie ze względu na brak wielu danych w tych kolumnach.
+
+# Analiza
+
+### 1. Co to jest obszar miejski? Kiedy jego powierzchnia jest mniejsza od powierzchni samego miasta
+
+Obszar miejski, lub obszar zabudowany, to **osiedle ludzkie o dużej gęstości zaludnienia i infrastrukturze środowiska zabudowanego**.
+
+W tabeli (@tbl-1) w kolumnie "Średnia powierzchnia obszaru miejskiego" wartości są zaznaczone na zielono, jeśli powierzchnia obszaru miejskiego jest większa od powierzchnia miasta i na czerwono, jeśli mniejsza.
+
+```{r}
+#| label: tbl-1
+#| tbl-cap: Tabela powierzchni miast oraz obszaru miejskiego
+
+tabela1 <- tabela %>% 
+  group_by(Definicja) %>% 
+  summarise(Powierzchnia1=mean(Obszar_miasta, na.rm=T), Powierzchnia2=mean(Obszar_obszaru_miejskiego, na.rm=T)) %>% 
+  arrange(Definicja)
+tabela1 <- tabela1[-nrow(tabela1),]
+
+tabela1[,c(2,3)] <- round(tabela1[,c(2,3)], digits  = 1)
+
+
+tabela1$Powierzchnia2 <- cell_spec(tabela1$Powierzchnia2, color = ifelse(tabela1$Powierzchnia2 > tabela1$Powierzchnia1, "green", "red"), font_size = 17)
+
+tabela1$Powierzchnia1 <- cell_spec(tabela1$Powierzchnia1, font_size = 17)
+
+tabela1$Definicja = cell_spec(
+  tabela1$Definicja, color = "white", align = "c", background = "#999999")
+  
+
+kbl(tabela1, escape = F, col.names = c("Definicja",
+                           "Średnia powierzchnia miasta",
+                           "Średnia powierzchnia obszaru miejskiego")) %>%
+ kable_paper("hover", full_width = F) %>%
+  kable_paper("striped", full_width = F) %>%
+  row_spec(0, angle = -5, color = "#045e98")
+```
+
+Najczęściej powierzchnia obszaru miejskiego jest większa od samego miasta, lecz w przypadku **prowincji, metropolii, gmin** (ang. municipality)**, miast na poziomie prefektury** oraz **guberni miejskich** (ang. urban governorate) jest odwrotnie.
+
+### 2. W których krajach jest najwięcej miast, które trafiły do listy największych miast świata? Jaka jest średnia gęstość zaludnienia w miastach z tych krajów?
+
+```{r}
+#| label: tbl-0
+#| tbl-cap: Tabela gęstości zaludnienia miasta
+
+tabela2 <- tabela %>% 
+  group_by(Kraj) %>% 
+  summarise(ilość=n(), gęstość=mean(Gestosc_zaludnienia_miasta, na.rm=T)) %>% 
+  arrange(-ilość) %>% 
+  head(10)
+
+tabela2 %>% 
+  kbl(col.names = c("Kraj", "Ilość razy występowania kraju", "Średnia gęstość zaludnienia miast")) %>%
+  kable_paper("hover", full_width = F) %>%
+  column_spec(1, color = spec_color(tabela2$ilość[1:36], begin = 0.99, end = 0.4)) %>%
+  column_spec(2, color = "white",
+              background = spec_color(tabela2$ilość[1:36], begin = 0.99, end = 0.4)) %>%
+  column_spec(3, color = spec_color(tabela2$ilość[1:36], begin = 0.99, end = 0.4)) %>%
+  row_spec(0, color = "#045e98", angle = -5)
+```
+
+Aż 20 chińskich miast trafiły do tej listy (patrz @tbl-0 ). Wynik wcale nie jest zadziwiający, bo **Chiny** to najludniejsze państwo świata o populacji przekraczającej1,4 mld osób, co stanowi 18,4% populacji świata.
+
+Na drugim miejscu po Cinach są **India** oraz **Stany Zjednoczone**. Do listy trafiły po 9 miast z tych państw.
+
+Średnia gęstość zaludnienia w Chińskich miastach jest równa **1924.611 na km2**, w Indyjskich **14373.778** **na km2** oraz **4071.222 na km2** w miastach Stanów Zjednoczonych. Dla porównania gęstość zaludnienia Lublina wynosi **2291 osób na km2.**
+
+Wszystkie inne kraje z listy największych miast świata mają tylko po jednym mieście, które trafiło do listy. Na mapie niżej są przedstawione te kraje.
+
+```{r}
+#| label: fig-0
+#| fig-cap: Wszystkie kraje, które trafiły do tabeli z największymi miastami świata
+ddf = read.table(text="
+country value
+China 20
+India	9
+USA	9	
+Japan	4
+Brazil 3	
+Egypt	2	
+Mexico	2
+Pakistan	2	
+Russia	2	
+Spain	2
+Angola	1
+Argentina	1
+Bangladesh	1
+Canada 1
+Chile 1
+Colombia 1
+France 1
+Indonesia 1
+Iran 1
+Iraq 1
+Malaysia 1
+Myanmar 1
+Nigeria 1
+Peru 1
+Philippines 1
+Singapore 1
+Sudan 1
+Tanzania 1
+Thailand 1
+Turkey 1
+UK 1
+Vietnam 1
+", header=T)
+ddf <- rbind(ddf, data.frame(country = c("Democratic Republic of the Congo"), value = 1))
+ddf <- rbind(ddf, data.frame(country = c("Saudi Arabia"), value = 1))
+ddf <- rbind(ddf, data.frame(country = c("South Africa"), value = 1))
+ddf <- rbind(ddf, data.frame(country = c("South Korea"), value = 1))
+
+
+world <- map_data("world")
+world <- subset(world, region != "Antarctica")
+
+wykr <- world %>%
+  merge(ddf, by.x = "region", by.y = "country", all.x = T) %>%
+  arrange(group, order) %>%
+  ggplot(aes(x = long, y = lat, group = group, fill=value)) + scale_fill_gradient(low="#BCF05A", high = "#1086A3") + geom_polygon()+labs(x="", y="", fill="n")+
+  theme(legend.position = "top")
+ggplotly(wykr)
+```
+
+n to ilość największych miast świata w danym kraju
+
+### 3. Jak zależy ludność miasta od ludności obszaru miejskiego? Czy zależy ludność obszaru miejskiego od oszaru miasta
+
+Dla wygodniejszej analizy nie będę uwzglęgniała pojedyńcze dane, w których ludność miasta jest zbyt duża (powyżej 20 milionów mieszkańców).
+
+```{r}
+tabela_bez_brakow_danych <- tabela[-c(18, 73:76, 78, 79),]
+
+
+tabela3 <- tabela_bez_brakow_danych %>% 
+  group_by(Kraj) %>% 
+  arrange(Kraj)
+tabela3 <- tabela3[tabela3$Ludnosc_miasta<20000000,]
+```
+
+```{r}
+#| label: fig-1
+#| fig-cap: Wykres zależności między ludnością  obszaru miejskiego a ludnością miasta
+wykres1 <- ggplot(tabela3, aes(x = Ludnosc_miasta, y = Ludnosc_obszaru_miejskiego ))+ 
+  geom_point(aes(color=Obszar_miasta, size=Obszar_miasta))+
+  geom_smooth(se=F)+
+  labs(x="Ludnosc miasta", y="Ludnosc obszaru miejskiego", colour="Obszar miasta", size = "Obszar miasta")+ scale_colour_gradient(low="#BCF05A", high = "#1086A3")
+ggplotly(wykres1)
+```
+
+**Im większa jest ludność miasta, tym większa jest też ludność obszaru miejskiego.** Można oszacować, że ilość mieszkańców miasta jest proporcjonalna do ilości mieszkańców obszaru miejskiego. Ciekawym faktem jest to, że **dla miast mających bardzo duży obszar, ludność obszaru miejskiego nie może być bardzo wysoka**. Takie informacje można wyczytać z wykresu (@fig-1 )
+
+### 4. Top 5 miast w różnych kategoriach. Który kraj najczęściej się pojawia w top?
+
+#### 4.1 Miasta z największą ludnością
+
+```{r}
+tabela4 <- tabela_bez_brakow_danych %>% 
+  arrange(-Ludnosc_miasta) %>% 
+  head(5) %>% 
+  group_by(Kraj) %>% 
+  summarise(Kraj,Nazwa_miasta ,ilość_razy_występowania_kraju=n(), Ludnosc_miasta)%>%   arrange(-Ludnosc_miasta) 
+```
+
+```{r}
+#| label: fig-2
+#| fig-cap: 5 miast z największą ludnością
+tabela4$Nazwa_miasta <- factor(tabela4$Nazwa_miasta) %>%
+  fct_reorder(tabela4$Ludnosc_miasta)
+wykr1 <- ggplot(tabela4, aes(x=Nazwa_miasta, y = Ludnosc_miasta, fill = Kraj)) +
+ geom_col() +
+  scale_fill_manual(values=c("#42cc83", "#39dfd7"))+
+  labs(x="Nazwa miasta", y="Ludność miasta", colour="Kraj")
+ggplotly(wykr1)
+```
+
+```{r}
+#| label: tbl-2
+#| tbl-cap: Ile razy występują kraje
+tabela4[1] <- cell_spec(tabela4[[1]], color = ifelse(tabela4$ilość_razy_występowania_kraju == 4, "#42cc83", "#6ed441"), font_size = 20)
+
+tabela4$ilość_razy_występowania_kraju <-  cell_spec(
+  tabela4$ilość_razy_występowania_kraju, color = "white", align = "c", angle = 35,background = factor(tabela4$ilość_razy_występowania_kraju, c(1,4), c("#6ed441", "#42cc83")))
+
+tabela4[4] <- cell_spec(tabela4[[4]], color = "white", bold = T,
+    background = spec_color(1:5,begin=0.3, end = 0.7, option = "A", direction = -1))
+
+
+kbl(tabela4, escape = F, align = "c", col.names = c("Kraj",
+                           "Nazwa miasta",
+                           "Ilość razy występowania kraju", "Obszar miasta")) %>%
+  kable_classic(full_width = F)%>%
+  kable_paper("hover", full_width = F)%>%
+  kable_styling()
+```
+
+#### 4.2 Miasta z największą powierzchnią
+
+```{r}
+
+tabela5 <- tabela_bez_brakow_danych %>% 
+  arrange(-Obszar_miasta) %>% 
+  head(5) %>% 
+  group_by(Kraj) %>% 
+  summarise(Kraj,Nazwa_miasta ,ilość_razy_występowania_kraju=n(), Obszar_miasta) %>%   arrange(-Obszar_miasta) 
+```
+
+```{r}
+#| label: fig-3
+#| fig-cap: 5 miast z największą powierzchnią
+tabela5$Nazwa_miasta <- factor(tabela5$Nazwa_miasta) %>%
+  fct_reorder(tabela5$Obszar_miasta)
+wykr2 <- ggplot(tabela5, aes(x=Nazwa_miasta, y = Obszar_miasta, fill = Kraj)) +
+ geom_col() +
+  scale_fill_manual(values=c("#42cc83", "#39dfd7"))+
+  labs(x="Nazwa miasta", y="Obszar miasta", colour="Kraj")
+ggplotly(wykr2)
+```
+
+```{r}
+#| label: tbl-3
+#| tbl-cap: Ile razy występują kraje
+tabela5[1] <- cell_spec(tabela5[[1]], color = ifelse(tabela5$ilość_razy_występowania_kraju == 4, "#42cc83", "#6ed441"), font_size = 20)
+
+tabela5$ilość_razy_występowania_kraju <-  cell_spec(
+  tabela5$ilość_razy_występowania_kraju, color = "white", align = "c", angle = 35,background = factor(tabela5$ilość_razy_występowania_kraju, c(1,4), c("#6ed441", "#42cc83")))
+
+tabela5[4] <- cell_spec(tabela5[[4]], color = "white", bold = T,
+    background = spec_color(1:5,begin=0.3, end = 0.7, option = "A", direction = -1))
+
+
+kbl(tabela5, escape = F, align = "c", col.names = c("Kraj",
+                           "Nazwa miasta",
+                           "Ilość razy występowania kraju", "Powierzchnia miasta")) %>%
+  kable_classic(full_width = F)%>%
+  kable_paper("hover", full_width = F) %>%
+  kable_styling()
+```
+
+#### 4.3 Miasta z największą gęstością zaludnienia
+
+```{r}
+tabela6 <- tabela_bez_brakow_danych %>% 
+  arrange(-Gestosc_zaludnienia_miasta) %>% 
+  head(5) %>% 
+  group_by(Kraj) %>% 
+  summarise(Kraj,Nazwa_miasta ,ilość_razy_występowania_kraju=n(), Gestosc_zaludnienia_miasta) %>%   arrange(-Gestosc_zaludnienia_miasta) 
+```
+
+```{r}
+#| label: fig-4
+#| fig-cap: 5 miast z największą gęstością zaludnienia
+tabela6$Nazwa_miasta <- factor(tabela6$Nazwa_miasta) %>%
+  fct_reorder(tabela6$Gestosc_zaludnienia_miasta)
+wykr3 <- ggplot(tabela6, aes(x=Nazwa_miasta, y = Gestosc_zaludnienia_miasta, fill = Kraj)) +
+ geom_col() +
+  scale_fill_manual(values=c("#42cc83", "#6ed441", "#39dfd7", "#38bed3"))+
+  labs(x="Nazwa miasta", y="Gestość zaludnienia miasta", colour="Kraj") 
+ggplotly(wykr3)
+```
+
+```{r}
+#| label: tbl-4
+#| tbl-cap: Ile razy występują kraje
+tabela6[1] <- cell_spec(tabela6[[1]], color = ifelse(tabela6$ilość_razy_występowania_kraju == 2, "#42cc83", "#6ed441"), font_size = 20)
+
+tabela6$ilość_razy_występowania_kraju <-  cell_spec(
+  tabela6$ilość_razy_występowania_kraju, color = "white", align = "c", angle = 35,background = factor(tabela6$ilość_razy_występowania_kraju, c(1,2), c("#6ed441", "#42cc83")))
+
+ tabela6[4] <- cell_spec(tabela6[[4]], color = "white", bold = T,
+                         background = spec_color(1:5,begin=0.3, end = 0.7, option = "A", direction = -1))
+ 
+ 
+ kbl(tabela6, escape = F, align = "c", col.names = c("Kraj",
+                           "Nazwa miasta",
+                           "Ilość razy występowania kraju", "Gęstość zaludnienia miasta")) %>%
+  kable_classic(full_width = F)%>%
+  kable_paper("hover", full_width = F)%>%
+  kable_styling()
+```
+
+Jak widać z tabel (@tbl-2, @tbl-3 ) w pierwzsej i drugiej kategorii wygrywają **Chiny**. Ten kraj w obydwu kategoriach pojawia się aż 4 razy. Z kolei w trzeciej kategorii wygrywają **Indie**, bo występuje w ostatniej tabeli (@tbl-4 ) 2 razy, a inne kraje tylko 1 raz.
+
+# Podsumowanie
+
+Wizualizacja jest najlepszą metodą prekazywania informacji, bo pozwala szybko, dokładne i dobrze zrozumieć przeanalizowane dane. Bez wizualizacji informację, w której bardzo łatwo się pogubić, nie dałoby się przekazać w sposób zrozumiały i dostępny dla wszystkich.
